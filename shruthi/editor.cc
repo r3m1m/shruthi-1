@@ -401,6 +401,16 @@ void Editor::OnSwitch(const Event& event) {
           Confirm(confirm_midi_backup);
         }
         break;
+      case SWITCH_MODE:
+        {
+           uint8_t* data = part.mutable_patch()->saved_data();
+           for (uint8_t i = 0; i < 92; ++i) {
+             midi_dispatcher.ForwardNoteOff(0, data[i]);    
+             //midi_dispatcher.OnEdit(12, 12, data[i]);    
+             midi_dispatcher.Flush();         
+            }
+           
+        }
     }
   } else if (id == SWITCH_MODE) {
     editor_mode_ = (editor_mode_ != EDITOR_MODE_PATCH)
