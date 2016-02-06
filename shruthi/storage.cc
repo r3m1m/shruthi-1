@@ -26,6 +26,7 @@
 #include "shruthi/display.h"
 #include "shruthi/editor.h"
 #include "shruthi/midi_dispatcher.h"
+#include "shruthi/parameter.h"
 #include "shruthi/oscillator.h"
 #include "shruthi/part.h"
 #include "shruthi/ui.h"
@@ -569,8 +570,8 @@ void Storage::PatchDump() {
 
   part.mutable_patch()->PrepareForWrite();
   uint8_t* data = part.mutable_patch()->saved_data();
-  for (uint8_t i = 0; i < PRM_MOD_ROW; ++i) {
-    midi_dispatcher.OnEditWithDelay(i, i, data[i]); 
+  for (uint8_t i = 0; i < 68; ++i) {
+    midi_dispatcher.OnEditWithDelay(parameter_manager.at_offset(i), i, data[i]);      
   }
   // Common parameters 
   // Offset is useless with cc parameters
@@ -586,17 +587,6 @@ void Storage::PatchDump() {
   midi_dispatcher.OnEditWithDelay(46, PRM_SYS_PORTAMENTO, part.system_settings().portamento); 
   midi_dispatcher.OnEditWithDelay(47, PRM_SYS_LEGATO, part.system_settings().legato); 
        
-  // Modulation matrix parameters
-  for(uint8_t i = 0; i < kModulationMatrixSize; ++i) {
-    // offset is also nrpn number
-    uint8_t sourceOffset = PRM_MOD_SOURCE + 3 * i;
-    uint8_t destOffset = PRM_MOD_DESTINATION + 3 * i;
-    uint8_t amountOffset = PRM_MOD_AMOUNT + 3 * i;
-
-    midi_dispatcher.OnEditWithDelay(33, sourceOffset, data[sourceOffset]);
-    midi_dispatcher.OnEditWithDelay(34, destOffset, data[destOffset]);
-    midi_dispatcher.OnEditWithDelay(35, amountOffset, data[amountOffset]);
-  }          
 }
 
 }  // shruthi
