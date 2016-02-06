@@ -218,8 +218,9 @@ void Storage::SysExParseCommand() {
       sysex_rx_expected_size_ = sizeof(SequencerSettings);
       break;
 
-    case 0x11:  // Patch request
+    case 0x11:  // Patch request as sysex
     case 0x12:  // Sequence request
+    case 0x13:  // Patch request as cc and nrpn
     case 0x14:  // System settings request
     case 0x15:  // Sequence step request
     case 0x16:  // Patch name request
@@ -321,6 +322,10 @@ void Storage::SysExAcceptBuffer() {
 
     case 0x12:
       Storage::SysExDump(part.mutable_sequencer_settings());
+      break;
+
+    case 0x13:
+      Storage::PatchDump();
       break;
 
     case 0x14:
@@ -557,6 +562,41 @@ void Storage::Init() {
     --num_accessible_banks_;
     address -= kBankSize;
   }
+}
+
+/* static */
+void Storage::PatchDump() {
+
+  part.mutable_patch()->PrepareForWrite();
+  uint8_t* data = part.mutable_patch()->saved_data();
+  for (uint8_t i = 0; i < PRM_MOD_ROW; ++i) {
+    midi_dispatcher.OnEditWithDelay(i, i, data[i]); 
+  }
+  // Common parameters 
+  // Offset is useless with cc parameters
+  midi_dispatcher.OnEditWithDelay(36, PRM_SEQ_MODE, data[77]); 
+  midi_dispatcher.OnEditWithDelay(38, PRM_SEQ_GROOVE_TEMPLATE, data[79]); 
+  midi_dispatcher.OnEditWithDelay(39, PRM_SEQ_GROOVE_AMOUNT, data[80]); 
+  midi_dispatcher.OnEditWithDelay(40, PRM_ARP_DIRECTION, (data[81] & 0xf0) >> 4); 
+  midi_dispatcher.OnEditWithDelay(41, PRM_ARP_RANGE, data[81] & 0x0f);
+  midi_dispatcher.OnEditWithDelay(42, PRM_ARP_PATTERN, data[82]); 
+  midi_dispatcher.OnEditWithDelay(43, PRM_ARP_DIVISION, data[83]);
+  midi_dispatcher.OnEditWithDelay(44, PRM_SYS_OCTAVE, part.system_settings().octave); 
+  midi_dispatcher.OnEditWithDelay(45, PRM_SYS_RAGA, part.system_settings().raga); 
+  midi_dispatcher.OnEditWithDelay(46, PRM_SYS_PORTAMENTO, part.system_settings().portamento); 
+  midi_dispatcher.OnEditWithDelay(47, PRM_SYS_LEGATO, part.system_settings().legato); 
+       
+  // Modulation matrix parameters
+  for(uint8_t i = 0; i < kModulationMatrixSize; ++i) {
+    // offset is also nrpn number
+    uint8_t sourceOffset = PRM_MOD_SOURCE + 3 * i;
+    uint8_t destOffset = PRM_MOD_DESTINATION + 3 * i;
+    uint8_t amountOffset = PRM_MOD_AMOUNT + 3 * i;
+
+    midi_dispatcher.OnEditWithDelay(33, sourceOffset, data[sourceOffset]);
+    midi_dispatcher.OnEditWithDelay(34, destOffset, data[destOffset]);
+    midi_dispatcher.OnEditWithDelay(35, amountOffset, data[amountOffset]);
+  }          
 }
 
 }  // shruthi

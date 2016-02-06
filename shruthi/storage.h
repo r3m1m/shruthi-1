@@ -78,6 +78,8 @@ class Storage {
  public:
   static void Init();
 
+  static void PatchDump();
+
   static inline uint8_t sysex_rx_state() {
     return sysex_rx_state_;
   }

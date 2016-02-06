@@ -256,6 +256,11 @@ class MidiDispatcher : public midi::MidiDevice {
     }
   }
   
+  static inline void OnEditWithDelay(uint8_t index, uint8_t offset, uint8_t value) {
+    OnEdit(index, offset, value);
+    Delay(10);
+  }  
+
   static inline void OnEdit(uint8_t index, uint8_t offset, uint8_t value) {
     // Do not forward changes of system settings!
     if (offset >= PRM_SYS_MASTER_TUNING) {
